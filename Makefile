@@ -13,10 +13,10 @@ vet:
 	go vet ./...
 
 build: vet
-	go build
+	go build ./cmd/web/
 
 run: vet
-	go run .
+	go build ./cmd/web/ && ./web
 
 clean:
 	go clean -x
