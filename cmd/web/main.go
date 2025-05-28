@@ -11,7 +11,13 @@ var (
 )
 
 func main() {
+
 	mux := http.NewServeMux()
+
+	/* TODO: Disable directory listings */
+	fs := http.FileServer(http.Dir("./ui/static/"))
+	mux.Handle("/static/", http.StripPrefix("/static", fs))
+
 	mux.HandleFunc("/", home)
 	mux.HandleFunc("/snippet/view/{id}", snippetView)
 	mux.HandleFunc("/snippet/create", snippetCreate)
