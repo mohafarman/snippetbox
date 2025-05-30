@@ -1,17 +1,17 @@
 package main
 
 import (
+	"flag"
 	"log/slog"
 	"net/http"
 	"path/filepath"
 	"time"
 )
 
-var (
-	PORT = ":4000"
-)
-
 func main() {
+
+	addr := flag.String("port", "4000", "HTTP server port adress.")
+	flag.Parse()
 
 	mux := http.NewServeMux()
 
@@ -25,14 +25,14 @@ func main() {
 	mux.HandleFunc("/snippet/create", snippetCreate)
 
 	server := http.Server{
-		Addr:         PORT,
+		Addr:         ":" + *addr,
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 60 * time.Second,
 		IdleTimeout:  90 * time.Second,
 		Handler:      mux,
 	}
 
-	slog.Info("Listening on port " + PORT)
+	slog.Info("Listening on port " + *addr)
 	err := server.ListenAndServe()
 	slog.Error("Server failed to run. Error: " + err.Error())
 }
