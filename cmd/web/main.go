@@ -2,16 +2,29 @@ package main
 
 import (
 	"flag"
-	"log/slog"
+	"log"
 	"net/http"
+	"os"
 	"path/filepath"
 	"time"
 )
 
-func main() {
+type application struct {
+	infoLog  *log.Logger
+	errorLog *log.Logger
+}
 
+func main() {
 	addr := flag.String("port", "4000", "HTTP server port adress.")
 	flag.Parse()
+
+	infoLog := log.New(os.Stdout, "INFO:\t", log.Ldate|log.Ltime)
+	errorLog := log.New(os.Stderr, "ERROR:\t", log.Ldate|log.Ltime|log.Lshortfile)
+
+	app := &application{
+		infoLog:  infoLog,
+		errorLog: errorLog,
+	}
 
 	mux := http.NewServeMux()
 
@@ -20,21 +33,22 @@ func main() {
 	fs := http.FileServer(neuteredFS{http.Dir("./ui/static/")})
 	mux.Handle("/static/", http.StripPrefix("/static", fs))
 
-	mux.HandleFunc("/", home)
-	mux.HandleFunc("/snippet/view/{id}", snippetView)
-	mux.HandleFunc("/snippet/create", snippetCreate)
+	mux.HandleFunc("/", app.home)
+	mux.HandleFunc("/snippet/view/{id}", app.snippetView)
+	mux.HandleFunc("/snippet/create", app.snippetCreate)
 
 	server := http.Server{
 		Addr:         ":" + *addr,
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 60 * time.Second,
 		IdleTimeout:  90 * time.Second,
+		ErrorLog:     errorLog,
 		Handler:      mux,
 	}
 
-	slog.Info("Listening on port " + *addr)
+	infoLog.Print("Listening on port " + *addr)
 	err := server.ListenAndServe()
-	slog.Error("Server failed to run. Error: " + err.Error())
+	errorLog.Print("Server failed to run. Error: " + err.Error())
 }
 
 type neuteredFS struct {
