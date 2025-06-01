@@ -1,10 +1,13 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"html/template"
 	"net/http"
 	"strconv"
+
+	"github.com/mohafarman/snippetbox/internal/models"
 )
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
@@ -37,13 +40,22 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 	// id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil || id < 1 {
-		// http.NotFound(w, r)
 		app.errorNotFound(w)
 		return
 	}
 
-	fmt.Fprintf(w, "Display a specific snippet with ID %d\n", id)
+	snippet, err := app.snippets.Get(id)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.errorNotFound(w)
+		} else {
+			app.errorServer(w, err)
+		}
+	}
+
+	fmt.Fprintf(w, "%+v\n", snippet)
 }
+
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 	/* Only allow POST method */
 	if r.Method != http.MethodPost {
