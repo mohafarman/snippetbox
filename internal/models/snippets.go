@@ -54,10 +54,40 @@ func (m *SnippetModel) Get(id int) (*Snippet, error) {
 			return nil, err
 		}
 	}
+
 	return s, nil
 }
 
 // This will get the most recent 10 snippets
-func (m *SnippetModel) Latest() (*[]Snippet, error) {
-	return nil, nil
+func (m *SnippetModel) Latest() ([]*Snippet, error) {
+	stmt := "SELECT * FROM snippets WHERE expires > DATE() ORDER BY id DESC LIMIT 10;"
+
+	rows, err := m.DB.Query(stmt)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	/* INFO: Optimization purposes */
+	// snippets := make([]*Snippet, 10)
+	snippets := []*Snippet{}
+
+	/* INFO: The resultset will automatically close itself when iteration completes */
+	for rows.Next() {
+		s := &Snippet{}
+		err := rows.Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
+		if err != nil {
+			return nil, err
+		}
+		snippets = append(snippets, s)
+	}
+
+	/* INFO: rows.Err() to retrieve any error that was encountered during the iteration
+	   always needs to be called after rows.Next() */
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return snippets, nil
 }
