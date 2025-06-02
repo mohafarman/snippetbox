@@ -22,6 +22,21 @@ func (app *application) errorNotFound(w http.ResponseWriter) {
 	app.errorClient(w, http.StatusNotFound)
 }
 
+func (app *application) render(w http.ResponseWriter, status int, page string, data *templateData) {
+	ts, ok := app.templates[page]
+	if !ok {
+		err := fmt.Errorf("The template %s does not exit", page)
+		app.errorServer(w, err)
+	}
+
+	w.WriteHeader(status)
+
+	err := ts.ExecuteTemplate(w, "base", data)
+	if err != nil {
+		app.errorServer(w, err)
+	}
+}
+
 type neuteredFS struct {
 	fs http.FileSystem
 }

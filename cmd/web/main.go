@@ -3,18 +3,21 @@ package main
 import (
 	"database/sql"
 	"flag"
-	_ "github.com/mattn/go-sqlite3"
-	"github.com/mohafarman/snippetbox/internal/models"
+	"html/template"
 	"log"
 	"net/http"
 	"os"
 	"time"
+
+	_ "github.com/mattn/go-sqlite3"
+	"github.com/mohafarman/snippetbox/internal/models"
 )
 
 type application struct {
-	infoLog  *log.Logger
-	errorLog *log.Logger
-	snippets *models.SnippetModel
+	infoLog   *log.Logger
+	errorLog  *log.Logger
+	snippets  *models.SnippetModel
+	templates map[string]*template.Template
 }
 
 func main() {
@@ -33,12 +36,18 @@ func main() {
 	}
 	defer db.Close()
 
+	templates, err := newTemplateCache()
+	if err != nil {
+		errorLog.Fatal(err)
+	}
+
 	app := &application{
 		infoLog:  infoLog,
 		errorLog: errorLog,
 		snippets: &models.SnippetModel{
 			DB: db,
 		},
+		templates: templates,
 	}
 
 	server := http.Server{
