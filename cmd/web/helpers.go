@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"net/http"
 	"path/filepath"
@@ -29,12 +30,18 @@ func (app *application) render(w http.ResponseWriter, status int, page string, d
 		app.errorServer(w, err)
 	}
 
-	w.WriteHeader(status)
-
-	err := ts.ExecuteTemplate(w, "base", data)
+	buf := new(bytes.Buffer)
+	err := ts.ExecuteTemplate(buf, "base", data)
 	if err != nil {
 		app.errorServer(w, err)
+		return
+		/* Stop execution if there's an error with the template */
 	}
+
+	w.WriteHeader(status)
+
+	buf.WriteTo(w)
+
 }
 
 type neuteredFS struct {
