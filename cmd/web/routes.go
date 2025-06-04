@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-func (app *application) routes() *http.ServeMux {
+func (app *application) routes() http.Handler {
 	mux := http.NewServeMux()
 
 	/* INFO: http.FileServer will transform os.ErrNotExist from
@@ -16,5 +16,7 @@ func (app *application) routes() *http.ServeMux {
 	mux.HandleFunc("/snippet/view/{id}", app.snippetView)
 	mux.HandleFunc("/snippet/create", app.snippetCreate)
 
-	return mux
+	/* INFO: flow of exeuction:
+	   secureHeaders → servemux → application handler → servemux → secureHeaders */
+	return app.logRequest(secureHeaders(mux))
 }
