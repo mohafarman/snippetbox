@@ -18,5 +18,5 @@ func (app *application) routes() http.Handler {
 
 	/* INFO: flow of exeuction:
 	   secureHeaders → servemux → application handler → servemux → secureHeaders */
-	return app.logRequest(secureHeaders(mux))
+	return app.recoverPanic(app.logRequest(secureHeaders(mux)))
 }
