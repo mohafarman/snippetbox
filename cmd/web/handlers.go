@@ -16,6 +16,13 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	/* This is added because "GET /" causes a panic due to conflicts with pattern */
+	if r.Method != http.MethodGet {
+		w.Header().Set("Allow", http.MethodGet)
+		app.errorClient(w, http.StatusMethodNotAllowed)
+		return
+	}
+
 	snippets, err := app.snippets.Latest()
 	if err != nil {
 		app.errorServer(w, err)
@@ -53,16 +60,10 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
-	/* Only allow POST method */
-	if r.Method != http.MethodPost {
-		w.Header().Set("Allow", http.MethodPost)
-		// INFO: Suppress header, the w.Header().Del("Date") does not remove header.
-		// w.Header()["Date"] = nil
-		app.errorClient(w, http.StatusMethodNotAllowed)
-		// http.Error(w, "Method not allowed.", http.StatusMethodNotAllowed)
-		return
-	}
+	w.Write([]byte("Display the form for creating a new snippet"))
+}
 
+func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
 	// Create some variables holding dummy data. We'll remove these later on
 	// during the build.
 	title := "Mr snail"

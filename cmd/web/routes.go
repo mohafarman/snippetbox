@@ -14,9 +14,12 @@ func (app *application) routes() http.Handler {
 	fs := http.FileServer(neuteredFS{http.Dir("./ui/static/")})
 	mux.Handle("/static/", http.StripPrefix("/static", fs))
 
+	/* Using "GET /" causes panic:
+	pattern "GET /" (...) conflicts with pattern "/static/" (...) */
 	mux.HandleFunc("/", app.home)
-	mux.HandleFunc("/snippet/view/{id}", app.snippetView)
-	mux.HandleFunc("/snippet/create", app.snippetCreate)
+	mux.HandleFunc("GET /snippet/view/{id}", app.snippetView)
+	mux.HandleFunc("GET /snippet/create", app.snippetCreate)
+	mux.HandleFunc("POST /snippet/create", app.snippetCreatePost)
 
 	standard := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
 
