@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/julienschmidt/httprouter"
 	"github.com/mohafarman/snippetbox/internal/models"
 )
 
@@ -13,13 +14,6 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	/* Serve 404 not found if it's not root */
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)
-		return
-	}
-
-	/* This is added because "GET /" causes a panic due to conflicts with pattern */
-	if r.Method != http.MethodGet {
-		w.Header().Set("Allow", http.MethodGet)
-		app.errorClient(w, http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -37,8 +31,9 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 
 func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 	// INFO: To extract from the url, new http module in Go 1.22 allows params
-	// id, err := strconv.Atoi(r.URL.Query().Get("id"))
-	id, err := strconv.Atoi(r.PathValue("id"))
+	// like so: id, err := strconv.Atoi(r.PathValue("id"))
+	params := httprouter.ParamsFromContext(r.Context())
+	id, err := strconv.Atoi(params.ByName("id"))
 	if err != nil || id < 1 {
 		app.errorNotFound(w)
 		return
