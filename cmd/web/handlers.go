@@ -8,7 +8,15 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/mohafarman/snippetbox/internal/models"
+	"github.com/mohafarman/snippetbox/internal/validator"
 )
+
+type SnippetCreateForm struct {
+	Title   string
+	Content string
+	Expires int
+	validator.Validator
+}
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	/* Serve 404 not found if it's not root */
@@ -55,17 +63,49 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Display the form for creating a new snippet"))
+	data := app.newTemplateData(r)
+	/* INFO: data.Form has to be initialized or it is nil and will cause a
+	   500 internal server error. Also good time to set default values */
+	data.Form = SnippetCreateForm{
+		Expires: 365,
+	}
+
+	app.render(w, http.StatusOK, "create.tmpl.html", data)
 }
 
 func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
-	// Create some variables holding dummy data. We'll remove these later on
-	// during the build.
-	title := "Mr snail"
-	content := "Mr snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa"
-	expires := 7
+	err := r.ParseForm()
+	if err != nil {
+		app.errorClient(w, http.StatusBadRequest)
+		return
+	}
 
-	id, err := app.snippets.Insert(title, content, expires)
+	expires, err := strconv.Atoi(r.PostForm.Get("expires"))
+	if err != nil {
+		app.errorClient(w, http.StatusBadRequest)
+		return
+	}
+
+	form := SnippetCreateForm{
+		Title:   r.PostForm.Get("title"),
+		Content: r.PostForm.Get("content"),
+		Expires: expires,
+	}
+
+	form.CheckField(validator.NotBlank(form.Title), "title", "This field cannot be blank")
+	form.CheckField(validator.MaxChars(form.Title, 100), "title", "This field cannot be more than 100 characters.")
+	form.CheckField(validator.NotBlank(form.Content), "content", "This field cannot be blank")
+	form.CheckField(validator.PermittedInt(form.Expires, 1, 7, 365), "expires", "This field must equal 1, 7 or 365.")
+
+	if !form.Valid() {
+		app.errorLog.Print(form.Validator.FieldErrors)
+		data := app.newTemplateData(r)
+		data.Form = form
+		app.render(w, http.StatusUnprocessableEntity, "create.tmpl.html", data)
+		return
+	}
+
+	id, err := app.snippets.Insert(form.Title, form.Content, form.Expires)
 	if err != nil {
 		app.errorServer(w, err)
 		return
