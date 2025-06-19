@@ -9,17 +9,20 @@ import (
 	"os"
 	"time"
 
+	"github.com/alexedwards/scs/sqlite3store"
+	"github.com/alexedwards/scs/v2"
 	"github.com/go-playground/form/v4"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/mohafarman/snippetbox/internal/models"
 )
 
 type application struct {
-	infoLog   *log.Logger
-	errorLog  *log.Logger
-	snippets  *models.SnippetModel
-	templates map[string]*template.Template
-	form      *form.Decoder
+	infoLog        *log.Logger
+	errorLog       *log.Logger
+	snippets       *models.SnippetModel
+	templates      map[string]*template.Template
+	form           *form.Decoder
+	sessionManager *scs.SessionManager
 }
 
 func main() {
@@ -45,14 +48,19 @@ func main() {
 
 	formDecoder := form.NewDecoder()
 
+	sessionsManager := scs.New()
+	sessionsManager.Store = sqlite3store.New(db)
+	sessionsManager.Lifetime = 12 * time.Hour
+
 	app := &application{
 		infoLog:  infoLog,
 		errorLog: errorLog,
 		snippets: &models.SnippetModel{
 			DB: db,
 		},
-		templates: templates,
-		form:      formDecoder,
+		templates:      templates,
+		form:           formDecoder,
+		sessionManager: sessionsManager,
 	}
 
 	server := http.Server{
