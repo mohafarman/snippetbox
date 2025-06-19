@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"database/sql"
 	"flag"
 	"html/template"
@@ -51,6 +52,8 @@ func main() {
 	sessionsManager := scs.New()
 	sessionsManager.Store = sqlite3store.New(db)
 	sessionsManager.Lifetime = 12 * time.Hour
+	/* Cookie will only be sent by a users browser when there is an HTTPS connection */
+	sessionsManager.Cookie.Secure = true
 
 	app := &application{
 		infoLog:  infoLog,
@@ -63,17 +66,26 @@ func main() {
 		sessionManager: sessionsManager,
 	}
 
+	/* Curve preferences value, so that only elliptic curves with
+	   assembly implementations are used. This is because the others (as of Go 1.20)
+	   CPU intensive. If we omit them the server will be more performant under
+	   heavy load. */
+	tlsConfig := &tls.Config{
+		CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
+	}
+
 	server := http.Server{
 		Addr:         ":" + *addr,
-		ReadTimeout:  30 * time.Second,
-		WriteTimeout: 60 * time.Second,
-		IdleTimeout:  90 * time.Second,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  60 * time.Second,
 		ErrorLog:     app.errorLog,
 		Handler:      app.routes(),
+		TLSConfig:    tlsConfig,
 	}
 
 	infoLog.Print("Listening on port " + *addr)
-	err = server.ListenAndServe()
+	err = server.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem")
 	errorLog.Print("Server failed to run. Error: " + err.Error())
 }
 
