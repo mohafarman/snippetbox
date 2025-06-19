@@ -2,10 +2,13 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"net/http"
 	"path/filepath"
 	"runtime/debug"
+
+	"github.com/go-playground/form/v4"
 )
 
 func (app *application) errorServer(w http.ResponseWriter, err error) {
@@ -42,6 +45,28 @@ func (app *application) render(w http.ResponseWriter, status int, page string, d
 
 	buf.WriteTo(w)
 
+}
+
+func (app *application) decodePostForm(r *http.Request, dst any) error {
+	err := r.ParseForm()
+	if err != nil {
+		return err
+	}
+
+	err = app.form.Decode(dst, r.PostForm)
+	if err != nil {
+		var invalidDecoderError *form.InvalidDecoderError
+		/* Invalid target destination will cause panic,
+		   this is not a user error */
+		if errors.As(err, &invalidDecoderError) {
+			panic(err)
+		}
+
+		/* For all other errors we want to return and assume client error */
+		return err
+	}
+
+	return nil
 }
 
 type neuteredFS struct {
