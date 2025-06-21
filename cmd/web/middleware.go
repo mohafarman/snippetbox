@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"github.com/justinas/nosurf"
 	"net/http"
+
+	"github.com/justinas/nosurf"
 )
 
 func secureHeaders(next http.Handler) http.Handler {
@@ -61,6 +63,33 @@ func (app *application) requireAuthentication(next http.Handler) http.Handler {
 		// require authentication are not stored in the users browser cache (or
 		// other intermediary cache).
 		w.Header().Add("Cache-Control", "no-store")
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (app *application) authentication(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		id := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
+		// Id == 0 if there is no authenticatedUserID, then simply call next
+		// handler in the chain with the unchanged context in r
+		if id == 0 {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		exists, err := app.users.Exists(id)
+		if err != nil {
+			app.errorServer(w, err)
+			return
+		}
+
+		// If a matching user is found in the db then copy the new request with
+		// the isAuthenticatedContextKey and assign it to r
+		if exists {
+			ctx := context.WithValue(r.Context(), isAuthenticatedContextKey, true)
+			r = r.WithContext(ctx)
+		}
 
 		next.ServeHTTP(w, r)
 	})
