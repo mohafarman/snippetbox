@@ -76,6 +76,9 @@ func main() {
 	   heavy load. */
 	tlsConfig := &tls.Config{
 		CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
+		/* INFO: If MinVersion TLS1.3 is used then no need for justinas/nosurf
+		   package to prevent CSRF protection */
+		// MinVersion: tls.VersionTLS13,
 	}
 
 	server := http.Server{
