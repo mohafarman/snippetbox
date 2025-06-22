@@ -29,3 +29,6 @@ snippetbox
 
 # tls
 tls/
+
+# tmp
+tmp/

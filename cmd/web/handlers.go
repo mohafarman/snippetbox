@@ -236,7 +236,6 @@ func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
 
 func (app *application) isAuthenticated(r *http.Request) bool {
 	isAuthenticated, ok := r.Context().Value(isAuthenticatedContextKey).(bool)
-	app.infoLog.Print(isAuthenticated)
 	if !ok {
 		// User does not exist in the db
 		return false

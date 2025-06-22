@@ -5,6 +5,7 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/justinas/alice"
+	"github.com/mohafarman/snippetbox/ui"
 )
 
 func (app *application) routes() http.Handler {
@@ -16,8 +17,12 @@ func (app *application) routes() http.Handler {
 
 	/* INFO: http.FileServer will transform os.ErrNotExist from
 	   neuteredFS.Open() to 404 Not Found response. */
-	fs := http.FileServer(neuteredFS{http.Dir("./ui/static/")})
-	router.Handler(http.MethodGet, "/static/*filepath", http.StripPrefix("/static", fs))
+	// fs := http.FileServer(neuteredFS{http.Dir("./ui/static/")})
+	// router.Handler(http.MethodGet, "/static/*filepath", http.StripPrefix("/static", fs))
+
+	fs := http.FileServer(http.FS(ui.Files))
+	// INFO: No need for strip prefix when using embedded fs
+	router.Handler(http.MethodGet, "/static/*filepath", fs)
 
 	dynamic := alice.New(app.sessionManager.LoadAndSave, noSurf, app.authentication)
 
