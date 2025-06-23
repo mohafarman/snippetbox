@@ -20,6 +20,8 @@ func (app *application) routes() http.Handler {
 	// fs := http.FileServer(neuteredFS{http.Dir("./ui/static/")})
 	// router.Handler(http.MethodGet, "/static/*filepath", http.StripPrefix("/static", fs))
 
+	router.HandlerFunc(http.MethodGet, "/ping", app.ping)
+
 	fs := http.FileServer(http.FS(ui.Files))
 	// INFO: No need for strip prefix when using embedded fs
 	router.Handler(http.MethodGet, "/static/*filepath", fs)

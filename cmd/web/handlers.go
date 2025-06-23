@@ -31,6 +31,10 @@ type userLoginForm struct {
 	validator.Validator `form:"-"`
 }
 
+func (app *application) ping(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("OK"))
+}
+
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	/* Serve 404 not found if it's not root */
 	if r.URL.Path != "/" {
