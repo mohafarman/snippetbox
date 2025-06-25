@@ -69,7 +69,6 @@ func newTemplateCache() (map[string]*template.Template, error) {
 
 		/* Add template set to the map, using name of the page,
 		   "home.tmpl.html" as the key */
-		/* TODO: ERROR: The template signup.tmpl.html does not exit */
 		cache[name] = ts
 	}
 
