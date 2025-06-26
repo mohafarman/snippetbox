@@ -13,9 +13,13 @@ import (
 
 func (app *application) errorServer(w http.ResponseWriter, err error) {
 	trace := fmt.Sprintf("%s\n%s", err.Error(), debug.Stack())
-	app.errorLog.Output(2, trace)
+	if app.debugMode {
+		http.Error(w, trace, http.StatusInternalServerError)
+	} else {
+		app.errorLog.Output(2, trace)
 
-	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
 }
 
 func (app *application) errorClient(w http.ResponseWriter, status int) {
@@ -24,6 +28,11 @@ func (app *application) errorClient(w http.ResponseWriter, status int) {
 
 func (app *application) errorNotFound(w http.ResponseWriter) {
 	app.errorClient(w, http.StatusNotFound)
+}
+
+func (app *application) errorDebugMode(w http.ResponseWriter, err error) {
+	trace := fmt.Sprintf("%s\n%s", err.Error(), debug.Stack())
+	w.Write([]byte(trace))
 }
 
 func (app *application) render(w http.ResponseWriter, status int, page string, data *templateData) {

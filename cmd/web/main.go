@@ -25,10 +25,12 @@ type application struct {
 	templates      map[string]*template.Template
 	form           *form.Decoder
 	sessionManager *scs.SessionManager
+	debugMode      bool
 }
 
 func main() {
 	addr := flag.String("port", "4000", "HTTP server port adress.")
+	debug := flag.Bool("debug", false, "debug mode. (default \"false\")")
 	flag.Parse()
 
 	infoLog := log.New(os.Stdout, "INFO:\t", log.Ldate|log.Ltime)
@@ -68,6 +70,7 @@ func main() {
 		templates:      templates,
 		form:           formDecoder,
 		sessionManager: sessionsManager,
+		debugMode:      *debug,
 	}
 
 	/* Curve preferences value, so that only elliptic curves with
