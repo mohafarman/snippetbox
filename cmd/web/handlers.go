@@ -223,6 +223,22 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/snippet/create", http.StatusSeeOther)
 }
 
+func (app *application) accountView(w http.ResponseWriter, r *http.Request) {
+	data := app.newTemplateData(r)
+	id := app.sessionManager.Get(r.Context(), "authenticatedUserID").(int)
+	user, err := app.users.Get(id)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+			return
+		}
+	}
+
+	data.User = user
+
+	app.render(w, http.StatusOK, "account.tmpl.html", data)
+}
+
 func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
 	err := app.sessionManager.RenewToken(r.Context())
 	if err != nil {
