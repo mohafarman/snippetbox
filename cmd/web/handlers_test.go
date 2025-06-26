@@ -138,3 +138,63 @@ func TestUserSignup(t *testing.T) {
 		})
 	}
 }
+
+func TestSnippetCreate(t *testing.T) {
+	app := newTestApplication(t)
+
+	ts := newTestServer(t, app.routes())
+	defer ts.Close()
+
+	const (
+		validEmail    = "bob@example.com"
+		validPassword = "password"
+		formTag       = "<form action='/snippet/create' method='POST' novalidate>"
+	)
+
+	tests := []struct {
+		name       string
+		wantCode   int
+		wantHeader string
+	}{
+		{
+			name:       "Unauthenticated",
+			wantCode:   303,
+			wantHeader: "/user/login",
+		},
+		{
+			name:     "Authenticated",
+			wantCode: 200,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.name == "Unauthenticated" {
+				code, header, _ := ts.get(t, "/snippet/create")
+				assert.Equal(t, code, tt.wantCode)
+				if tt.wantHeader != "" {
+					assert.StringContains(t, header.Get("Location"), tt.wantHeader)
+				}
+				return
+			} else {
+				_, _, body := ts.get(t, "/user/login")
+				csrfToken := extractCSRFToken(t, body)
+
+				form := url.Values{}
+				form.Add("email", validEmail)
+				form.Add("password", validPassword)
+				form.Add("csrf_token", csrfToken)
+				/* Form is valid */
+
+				code, _, body := ts.postForm(t, "/user/login", form)
+				t.Logf("code: %v\n body: %v\n", code, body)
+				// TODO:
+				/* Prints out code: 400 and Bad Request. Why? I don't know */
+
+				code, _, body = ts.get(t, "/snippet/create")
+				assert.Equal(t, code, tt.wantCode)
+				assert.StringContains(t, body, formTag)
+			}
+		})
+	}
+}
