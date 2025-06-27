@@ -46,3 +46,7 @@ func (m *UserModel) Get(id int) (*models.User, error) {
 
 	return nil, models.ErrNoRecord
 }
+
+func (m *UserModel) CompareAndUpdatePassword(id int, currentPassword, newPassword string) (bool, error) {
+	return true, nil
+}
